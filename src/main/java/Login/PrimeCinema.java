@@ -1,4 +1,6 @@
 package Login;
+
+import Controlador.salaservlet;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -6,12 +8,13 @@ import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class PrimeCinema extends JFrame {
 
     private JPanel panelLogin, panelSignUp;
     private CardLayout cardLayout;
-    private JPanel mainPanel; // Añadido como variable de instancia
+    private JPanel mainPanel;
 
     public PrimeCinema() {
         // Configuración de la ventana
@@ -22,7 +25,7 @@ public class PrimeCinema extends JFrame {
 
         // Usamos CardLayout para cambiar entre los paneles de inicio de sesión y registro
         cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout); // Este es el panel que debe tener el CardLayout
+        mainPanel = new JPanel(cardLayout);
 
         // Crear paneles de inicio de sesión y registro
         panelLogin = createLoginPanel();
@@ -36,10 +39,10 @@ public class PrimeCinema extends JFrame {
         add(mainPanel);
 
         // Mostrar el panel de inicio de sesión por defecto
-        cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+        cardLayout.show(mainPanel, "log" +
+                "in");
     }
 
-    // Panel de inicio de sesión (Login)
     private JPanel createLoginPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(6, 1, 10, 10));
@@ -66,7 +69,12 @@ public class PrimeCinema extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Aquí puedes agregar la lógica para el inicio de sesión
-                JOptionPane.showMessageDialog(null, "Inicio de sesión exitoso!");
+                if (autenticarUsuario(usuarioField.getText(), new String(contrasenaField.getPassword()))) {
+                    JOptionPane.showMessageDialog(null, "Inicio de sesión exitoso!");
+                    abrirSala(); // Abre la sala tras el login
+                } else {
+                    JOptionPane.showMessageDialog(null, "Usuario o contraseña incorrectos.");
+                }
             }
         });
         panel.add(loginButton);
@@ -78,7 +86,7 @@ public class PrimeCinema extends JFrame {
         registerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cardLayout.show(mainPanel, "signUp"); // Cambia "getContentPane()" por "mainPanel"
+                cardLayout.show(mainPanel, "signUp");
             }
         });
 
@@ -89,7 +97,6 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
-    // Panel de registro (Sign Up)
     private JPanel createSignUpPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(10, 1, 10, 10));
@@ -147,7 +154,7 @@ public class PrimeCinema extends JFrame {
                 // Insertar los datos en la base de datos
                 if (guardarUsuario(usuario, contrasena, nombre_completo, dui, direccion, correo, telefono)) {
                     JOptionPane.showMessageDialog(null, "Registro exitoso!");
-                    cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+                    cardLayout.show(mainPanel, "login");
                 } else {
                     JOptionPane.showMessageDialog(null, "Error al registrar el usuario.");
                 }
@@ -160,7 +167,7 @@ public class PrimeCinema extends JFrame {
         switchToSignIn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+                cardLayout.show(mainPanel, "login");
             }
         });
         panel.add(switchToSignIn);
@@ -168,7 +175,6 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
-    // Método para guardar el usuario en la base de datos
     private boolean guardarUsuario(String usuario, String contrasena, String nombre_completo, String dui, String direccion, String correo, String telefono) {
         String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
         String user = "root"; // Cambia por tu usuario de MySQL
@@ -180,7 +186,7 @@ public class PrimeCinema extends JFrame {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, usuario);
-            ps.setString(2, contrasena);
+            ps.setString(2, contrasena); // En producción, hash la contraseña antes de guardarla
             ps.setString(3, nombre_completo);
             ps.setString(4, dui);
             ps.setString(5, direccion);
@@ -190,10 +196,41 @@ public class PrimeCinema extends JFrame {
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
             return false;
         }
+    }
+
+    private boolean autenticarUsuario(String usuario, String contrasena) {
+        String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
+        String user = "root"; // Cambia por tu usuario de MySQL
+        String password = ""; // Cambia por tu contraseña de MySQL
+
+        String sql = "SELECT * FROM usuarios WHERE usuario = ? AND contrasena = ?";
+
+        try (Connection con = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, usuario);
+            ps.setString(2, contrasena); // En producción, compara el hash de la contraseña
+
+            return ps.executeQuery().next();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    private void abrirSala() {
+        this.dispose(); // Cierra la ventana actual (login)
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new salaservlet().setVisible(true); // Asegúrate de que salaservlet sea visible
+            }
+        });
     }
 
     public static void main(String[] args) {
