@@ -43,7 +43,12 @@ public class PrimeCinema extends JFrame {
         add(mainPanel);
 
         // Mostrar el panel de inicio de sesión por defecto
+<<<<<<< HEAD
         cardLayout.show(mainPanel, "login");
+=======
+        cardLayout.show(mainPanel, "log" +
+                "in");
+>>>>>>> dd7e8122949511f68a106f89f2acb6277c6044d3
     }
 
     private JPanel createLoginPanel() {
@@ -74,7 +79,11 @@ public class PrimeCinema extends JFrame {
                 // Aquí puedes agregar la lógica para el inicio de sesión
                 if (autenticarUsuario(usuarioField.getText(), new String(contrasenaField.getPassword()))) {
                     JOptionPane.showMessageDialog(null, "Inicio de sesión exitoso!");
+<<<<<<< HEAD
                     abrirIntermedio(); // Abre el panel intermedio tras el login
+=======
+                    abrirSala(); // Abre la sala tras el login
+>>>>>>> dd7e8122949511f68a106f89f2acb6277c6044d3
                 } else {
                     JOptionPane.showMessageDialog(null, "Usuario o contraseña incorrectos.");
                 }
@@ -178,6 +187,7 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
+<<<<<<< HEAD
     private JPanel createIntermedioPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(3, 1, 10, 10));
@@ -271,6 +281,8 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
+=======
+>>>>>>> dd7e8122949511f68a106f89f2acb6277c6044d3
     private boolean guardarUsuario(String usuario, String contrasena, String nombre_completo, String dui, String direccion, String correo, String telefono) {
         String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
         String user = "root"; // Cambia por tu usuario de MySQL
@@ -298,6 +310,7 @@ public class PrimeCinema extends JFrame {
         }
     }
 
+<<<<<<< HEAD
     private boolean guardarSucursal(String nombreSucursal, String gerente, String direccionSucursal, String telefonoSucursal) {
         String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
         String user = "root"; // Cambia por tu usuario de MySQL
@@ -322,6 +335,8 @@ public class PrimeCinema extends JFrame {
         }
     }
 
+=======
+>>>>>>> dd7e8122949511f68a106f89f2acb6277c6044d3
     private boolean autenticarUsuario(String usuario, String contrasena) {
         String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
         String user = "root"; // Cambia por tu usuario de MySQL
@@ -343,12 +358,17 @@ public class PrimeCinema extends JFrame {
         }
     }
 
+<<<<<<< HEAD
     private void abrirIntermedio() {
         cardLayout.show(mainPanel, "intermedio"); // Muestra el panel intermedio
     }
 
     private void abrirSeleccionButacas() {
         this.dispose(); // Cierra la ventana actual (intermedio)
+=======
+    private void abrirSala() {
+        this.dispose(); // Cierra la ventana actual (login)
+>>>>>>> dd7e8122949511f68a106f89f2acb6277c6044d3
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
