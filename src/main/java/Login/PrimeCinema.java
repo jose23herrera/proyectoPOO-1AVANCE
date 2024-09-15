@@ -1,4 +1,6 @@
 package Login;
+
+import Controlador.salaservlet;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -6,12 +8,13 @@ import java.awt.event.ActionListener;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class PrimeCinema extends JFrame {
 
-    private JPanel panelLogin, panelSignUp;
+    private JPanel panelLogin, panelSignUp, panelIntermedio, panelRegistrarSucursal;
     private CardLayout cardLayout;
-    private JPanel mainPanel; // Añadido como variable de instancia
+    private JPanel mainPanel;
 
     public PrimeCinema() {
         // Configuración de la ventana
@@ -20,26 +23,29 @@ public class PrimeCinema extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Usamos CardLayout para cambiar entre los paneles de inicio de sesión y registro
+        // Usamos CardLayout para cambiar entre los paneles de inicio de sesión, registro y panel intermedio
         cardLayout = new CardLayout();
-        mainPanel = new JPanel(cardLayout); // Este es el panel que debe tener el CardLayout
+        mainPanel = new JPanel(cardLayout);
 
-        // Crear paneles de inicio de sesión y registro
+        // Crear paneles de inicio de sesión, registro, panel intermedio y registro de sucursales
         panelLogin = createLoginPanel();
         panelSignUp = createSignUpPanel();
+        panelIntermedio = createIntermedioPanel();
+        panelRegistrarSucursal = createRegistrarSucursalPanel();
 
         // Agregar paneles al contenedor principal
         mainPanel.add(panelLogin, "login");
         mainPanel.add(panelSignUp, "signUp");
+        mainPanel.add(panelIntermedio, "intermedio");
+        mainPanel.add(panelRegistrarSucursal, "registrarSucursal");
 
         // Agregar el contenedor principal a la ventana
         add(mainPanel);
 
         // Mostrar el panel de inicio de sesión por defecto
-        cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+        cardLayout.show(mainPanel, "login");
     }
 
-    // Panel de inicio de sesión (Login)
     private JPanel createLoginPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(6, 1, 10, 10));
@@ -66,7 +72,12 @@ public class PrimeCinema extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Aquí puedes agregar la lógica para el inicio de sesión
-                JOptionPane.showMessageDialog(null, "Inicio de sesión exitoso!");
+                if (autenticarUsuario(usuarioField.getText(), new String(contrasenaField.getPassword()))) {
+                    JOptionPane.showMessageDialog(null, "Inicio de sesión exitoso!");
+                    abrirIntermedio(); // Abre el panel intermedio tras el login
+                } else {
+                    JOptionPane.showMessageDialog(null, "Usuario o contraseña incorrectos.");
+                }
             }
         });
         panel.add(loginButton);
@@ -78,7 +89,7 @@ public class PrimeCinema extends JFrame {
         registerButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cardLayout.show(mainPanel, "signUp"); // Cambia "getContentPane()" por "mainPanel"
+                cardLayout.show(mainPanel, "signUp");
             }
         });
 
@@ -89,7 +100,6 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
-    // Panel de registro (Sign Up)
     private JPanel createSignUpPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(10, 1, 10, 10));
@@ -147,7 +157,7 @@ public class PrimeCinema extends JFrame {
                 // Insertar los datos en la base de datos
                 if (guardarUsuario(usuario, contrasena, nombre_completo, dui, direccion, correo, telefono)) {
                     JOptionPane.showMessageDialog(null, "Registro exitoso!");
-                    cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+                    cardLayout.show(mainPanel, "login");
                 } else {
                     JOptionPane.showMessageDialog(null, "Error al registrar el usuario.");
                 }
@@ -160,7 +170,7 @@ public class PrimeCinema extends JFrame {
         switchToSignIn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cardLayout.show(mainPanel, "login"); // Cambia "getContentPane()" por "mainPanel"
+                cardLayout.show(mainPanel, "login");
             }
         });
         panel.add(switchToSignIn);
@@ -168,7 +178,99 @@ public class PrimeCinema extends JFrame {
         return panel;
     }
 
-    // Método para guardar el usuario en la base de datos
+    private JPanel createIntermedioPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(3, 1, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel labelTitle = new JLabel("¡Bienvenido a PrimeCinema!", SwingConstants.CENTER);
+        labelTitle.setFont(new Font("Roboto", Font.BOLD, 18));
+        panel.add(labelTitle);
+
+        JButton goToButacasButton = new JButton("Ir a Selección de Butacas");
+        goToButacasButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                abrirSeleccionButacas(); // Redirigir al panel de selección de butacas
+            }
+        });
+        panel.add(goToButacasButton);
+
+        JButton goToRegistrarSucursalButton = new JButton("Registrar Sucursal");
+        goToRegistrarSucursalButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cardLayout.show(mainPanel, "registrarSucursal"); // Redirigir al panel de registro de sucursales
+            }
+        });
+        panel.add(goToRegistrarSucursalButton);
+
+        return panel;
+    }
+
+    private JPanel createRegistrarSucursalPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(5, 1, 10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        JLabel labelTitle = new JLabel("Registrar Sucursal", SwingConstants.CENTER);
+        labelTitle.setFont(new Font("Roboto", Font.BOLD, 18));
+        panel.add(labelTitle);
+
+        // Campos de formulario
+        JTextField nombreSucursalField = new JTextField(20);
+        nombreSucursalField.setBorder(BorderFactory.createTitledBorder("Nombre de la Sucursal"));
+
+        JTextField gerenteField = new JTextField(20);
+        gerenteField.setBorder(BorderFactory.createTitledBorder("Gerente"));
+
+        JTextField direccionSucursalField = new JTextField(20);
+        direccionSucursalField.setBorder(BorderFactory.createTitledBorder("Dirección"));
+
+        JTextField telefonoSucursalField = new JTextField(20);
+        telefonoSucursalField.setBorder(BorderFactory.createTitledBorder("Teléfono"));
+
+        // Añadir los campos al panel
+        panel.add(nombreSucursalField);
+        panel.add(gerenteField);
+        panel.add(direccionSucursalField);
+        panel.add(telefonoSucursalField);
+
+        // Botón de registro
+        JButton registerButton = new JButton("Registrar Sucursal");
+        registerButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Obtener los datos de los campos
+                String nombreSucursal = nombreSucursalField.getText();
+                String gerente = gerenteField.getText();
+                String direccionSucursal = direccionSucursalField.getText();
+                String telefonoSucursal = telefonoSucursalField.getText();
+
+                // Insertar los datos en la base de datos
+                if (guardarSucursal(nombreSucursal, gerente, direccionSucursal, telefonoSucursal)) {
+                    JOptionPane.showMessageDialog(null, "Sucursal registrada exitosamente!");
+                    cardLayout.show(mainPanel, "intermedio"); // Volver al panel intermedio
+                } else {
+                    JOptionPane.showMessageDialog(null, "Error al registrar la sucursal.");
+                }
+            }
+        });
+        panel.add(registerButton);
+
+        // Botón para cambiar al panel intermedio
+        JButton backToIntermedioButton = new JButton("Volver al Panel Intermedio");
+        backToIntermedioButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                cardLayout.show(mainPanel, "intermedio");
+            }
+        });
+        panel.add(backToIntermedioButton);
+
+        return panel;
+    }
+
     private boolean guardarUsuario(String usuario, String contrasena, String nombre_completo, String dui, String direccion, String correo, String telefono) {
         String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
         String user = "root"; // Cambia por tu usuario de MySQL
@@ -180,7 +282,7 @@ public class PrimeCinema extends JFrame {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, usuario);
-            ps.setString(2, contrasena);
+            ps.setString(2, contrasena); // En producción, hash la contraseña antes de guardarla
             ps.setString(3, nombre_completo);
             ps.setString(4, dui);
             ps.setString(5, direccion);
@@ -190,10 +292,69 @@ public class PrimeCinema extends JFrame {
             int rowsAffected = ps.executeUpdate();
             return rowsAffected > 0;
 
-        } catch (Exception ex) {
+        } catch (SQLException ex) {
             ex.printStackTrace();
             return false;
         }
+    }
+
+    private boolean guardarSucursal(String nombreSucursal, String gerente, String direccionSucursal, String telefonoSucursal) {
+        String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
+        String user = "root"; // Cambia por tu usuario de MySQL
+        String password = ""; // Cambia por tu contraseña de MySQL
+
+        String sql = "INSERT INTO sucursales (nombre_sucursal, gerente, direccion_sucursal, telefono_sucursal) VALUES (?, ?, ?, ?)";
+
+        try (Connection con = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, nombreSucursal);
+            ps.setString(2, gerente);
+            ps.setString(3, direccionSucursal);
+            ps.setString(4, telefonoSucursal);
+
+            int rowsAffected = ps.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean autenticarUsuario(String usuario, String contrasena) {
+        String url = "jdbc:mysql://localhost:3306/primecinema"; // Cambia por tu URL y nombre de la base de datos
+        String user = "root"; // Cambia por tu usuario de MySQL
+        String password = ""; // Cambia por tu contraseña de MySQL
+
+        String sql = "SELECT * FROM usuarios WHERE usuario = ? AND contrasena = ?";
+
+        try (Connection con = DriverManager.getConnection(url, user, password);
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, usuario);
+            ps.setString(2, contrasena); // En producción, compara el hash de la contraseña
+
+            return ps.executeQuery().next();
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            return false;
+        }
+    }
+
+    private void abrirIntermedio() {
+        cardLayout.show(mainPanel, "intermedio"); // Muestra el panel intermedio
+    }
+
+    private void abrirSeleccionButacas() {
+        this.dispose(); // Cierra la ventana actual (intermedio)
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new salaservlet().setVisible(true); // Asegúrate de que salaservlet sea visible
+            }
+        });
     }
 
     public static void main(String[] args) {
@@ -205,3 +366,5 @@ public class PrimeCinema extends JFrame {
         });
     }
 }
+
+
